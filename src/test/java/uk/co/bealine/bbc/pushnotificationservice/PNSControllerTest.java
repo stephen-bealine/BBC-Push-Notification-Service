@@ -1,6 +1,8 @@
 package uk.co.bealine.bbc.pushnotificationservice;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -15,6 +17,7 @@ import static uk.co.bealine.bbc.pushnotificationservice.TestData.randomUserAccou
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,8 +33,8 @@ import uk.co.bealine.bbc.pushnotificationservice.model.UserAccount;
 import uk.co.bealine.bbc.pushnotificationservice.repository.InMemoryAccountRepository;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(PNSController.class)
-class PNSControllerTest {
+@WebMvcTest(AccountsController.class)
+class AccountsControllerTest {
 
   @Autowired
   private MockMvc mvc;
@@ -51,7 +54,7 @@ class PNSControllerTest {
       UserAccount testNewAccount = randomUserAccount().creationTime(testTime).build();
       when(accountRepository.createAccount(any())).thenReturn(testNewAccount);
 
-      mvc.perform(post("/pns/register")
+      mvc.perform(post("/accounts")
           .content(objectMapper.writeValueAsString(model))
           .contentType(MediaType.APPLICATION_JSON))
          .andExpect(status().isCreated())
@@ -71,7 +74,7 @@ class PNSControllerTest {
                                                      .username(null)
                                                      .accessToken("someAccessToken")
                                                      .build();
-      mvc.perform(post("/pns/register")
+      mvc.perform(post("/accounts")
           .content(objectMapper.writeValueAsString(model))
           .contentType(MediaType.APPLICATION_JSON))
          .andExpect(status().isBadRequest())
@@ -83,12 +86,53 @@ class PNSControllerTest {
     @Test
     @SneakyThrows
     void givenNoDetails_whenPostRegistration_thenAccountNotCreatedAndBadRequest() {
-      mvc.perform(post("/pns/register")
+      mvc.perform(post("/accounts")
           .contentType(MediaType.APPLICATION_JSON))
          .andExpect(status().isBadRequest())
       ;
 
       verifyNoInteractions(accountRepository);
+    }
+  }
+
+  @Nested
+  class GetAllAccounts {
+
+    @Test
+    @SneakyThrows
+    void givenNoAccounts_whenGetAllAccounts_thenEmptyListReturned() {
+      mvc.perform(get("/accounts")
+          .contentType(MediaType.APPLICATION_JSON))
+         .andExpect(status().isOk())
+         .andExpect(jsonPath("$", empty()));
+
+      verify(accountRepository, times(1)).retrieveAccounts();
+    }
+
+    @Test
+    @SneakyThrows
+    void givenAccounts_whenGetAllAccounts_thenListOfAccountsReturned() {
+      Instant testTime1 = Instant.now();
+      UserAccount account1 = randomUserAccount().creationTime(testTime1).build();
+      Instant testTime2 = Instant.now().minusSeconds(120);
+      UserAccount account2 = randomUserAccount().creationTime(testTime2).build();
+
+      when(accountRepository.retrieveAccounts()).thenReturn(List.of(account1, account2));
+
+      mvc.perform(get("/accounts")
+          .contentType(MediaType.APPLICATION_JSON))
+         .andExpect(status().isOk())
+         .andExpect(jsonPath("$", hasSize(2)))
+         .andExpect(jsonPath("$[0].username", is(account1.getUsername())))
+         .andExpect(jsonPath("$[0].accessToken", is(account1.getAccessToken())))
+         .andExpect(jsonPath("$[0].creationTime", is(testTime1.toString())))
+         .andExpect(jsonPath("$[0].numOfNotificationsPushed", is(0)))
+         .andExpect(jsonPath("$[1].username", is(account2.getUsername())))
+         .andExpect(jsonPath("$[1].accessToken", is(account2.getAccessToken())))
+         .andExpect(jsonPath("$[1].creationTime", is(testTime2.toString())))
+         .andExpect(jsonPath("$[1].numOfNotificationsPushed", is(0)));
+
+      verify(accountRepository, times(1)).retrieveAccounts();
     }
   }
 }

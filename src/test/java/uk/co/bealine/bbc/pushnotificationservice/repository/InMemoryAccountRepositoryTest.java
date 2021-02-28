@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static uk.co.bealine.bbc.pushnotificationservice.TestData.randomRegistration;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,7 @@ class InMemoryAccountRepositoryTest {
   private InMemoryAccountRepository accountRepository;
 
   @BeforeEach
-  void setup(){
+  void setup() {
     accountRepository = new InMemoryAccountRepository();
   }
 
@@ -46,6 +47,7 @@ class InMemoryAccountRepositoryTest {
 
   @Nested
   class RetrieveAccount {
+
     @Test
     void givenCreatedAccount_whenRetrieveAccount_thenAccountDetailsReturned() {
       AccountRegistration accountRegistration = randomRegistration().username("bbcUser1").build();
@@ -73,6 +75,34 @@ class InMemoryAccountRepositoryTest {
     void givenNullOrUnknownUsername_whenRetrieveAccount_thenNoDetailsReturned(String invalidUsername) {
       Optional<UserAccount> retrieveAccount = accountRepository.retrieveAccount(invalidUsername);
       assertThat(retrieveAccount).isNotPresent();
+    }
+  }
+
+  @Nested
+  class RetrieveAccounts {
+
+    @Test
+    void givenNoAccounts_whenRetrieveAccounts_thenEmptyListReturned() {
+      List<UserAccount> userAccounts = accountRepository.retrieveAccounts();
+      assertThat(userAccounts).isEmpty();
+    }
+
+    @Test
+    void givenSingleAccount_whenRetrieveAccounts_thenListContainingAccountReturned() {
+      UserAccount testAccount = accountRepository.createAccount(randomRegistration().build());
+      List<UserAccount> userAccounts = accountRepository.retrieveAccounts();
+      assertThat(userAccounts).containsOnly(testAccount);
+    }
+
+    @Test
+    void givenMultipleAccount_whenRetrieveAccounts_thenListContainingAllAccountSortedByCreationReturned() {
+      UserAccount testAccount1 = accountRepository.createAccount(randomRegistration().username("b").build());
+      UserAccount testAccount2 = accountRepository.createAccount(randomRegistration().username("c").build());
+      UserAccount testAccount3 = accountRepository.createAccount(randomRegistration().username("a").build());
+
+      List<UserAccount> userAccounts = accountRepository.retrieveAccounts();
+
+      assertThat(userAccounts).containsExactly(testAccount3, testAccount1, testAccount2);
     }
   }
 }
