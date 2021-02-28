@@ -1,0 +1,18 @@
+{
+  "active": true,
+  "iden": "ujCsAP4iOpEsjB4fn1MxGK",
+  "created": 1614533853.858507,
+  "modified": 1614533853.8634605,
+  "type": "note",
+  "dismissed": false,
+  "direction": "self",
+  "sender_iden": "ujCsAP4iOpE",
+  "sender_email": "sender@gmail.com",
+  "sender_email_normalized": "sender@gmail.com",
+  "sender_name": "Sender Name",
+  "receiver_iden": "ujCsAP4iOpE",
+  "receiver_email": "receiver@gmail.com",
+  "receiver_email_normalized": "receiver@gmail.com",
+  "title": "Space Travel Ideas",
+  "body": "Space Elevator, Mars Hyperloop, Space Model S (Model Space?)"
+}

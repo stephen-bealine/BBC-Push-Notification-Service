@@ -16,4 +16,8 @@ public class UserAccount {
   private final Instant creationTime;
   @Builder.Default
   private final AtomicInteger numOfNotificationsPushed = new AtomicInteger(INITIAL_PUSH_COUNT);
+
+  public void incrementPushCount() {
+    numOfNotificationsPushed.incrementAndGet();
+  }
 }
